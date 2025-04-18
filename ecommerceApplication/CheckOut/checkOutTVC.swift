@@ -7,10 +7,8 @@
 
 import UIKit
 import FirebaseAuth
-import PDFKit
-import MessageUI
 
-class checkOutTVC: UITableViewController, MFMailComposeViewControllerDelegate {
+class checkOutTVC: UITableViewController {
     
     @IBOutlet var checkoutTVC: UITableView!
     
