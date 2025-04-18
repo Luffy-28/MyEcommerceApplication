@@ -122,7 +122,7 @@ class cartTVC: UITableViewController {
                 guard let self = self else { return }
                 
                 if self.products.isEmpty {
-                    self.showToast("🛒 Your cart is empty! add some items to checkout")
+                    self.showToast("Your cart is empty! add some items to checkout")
                 } else {
                     let storyboard = UIStoryboard(name: "Main", bundle: nil)
                     if let checkoutVC = storyboard.instantiateViewController(withIdentifier: "checkOutTVC") as? checkOutTVC {
