@@ -116,14 +116,26 @@ class cartTVC: UITableViewController {
             footerCell.layoutIfNeeded()
             let footerHeight = footerCell.contentView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
             footerCell.contentView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: footerHeight.height)
-
+            
             footerCell.checkoutButton.addAction(UIAction { [weak self] _ in
-                self?.showCheckoutAlert()
+                
+                guard let self = self else { return }
+                
+                if self.products.isEmpty {
+                    self.showToast("🛒 Your cart is empty! add some items to checkout")
+                } else {
+                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                    if let checkoutVC = storyboard.instantiateViewController(withIdentifier: "checkOutTVC") as? checkOutTVC {
+                        checkoutVC.cartProducts = self.products  // Optional: Pass data
+                        self.navigationController?.pushViewController(checkoutVC, animated: true)
+                    }
+                }
             }, for: .touchUpInside)
-
+            
             tableView.tableFooterView = footerCell.contentView
         }
     }
+
 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete && indexPath.section == 0 {

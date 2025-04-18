@@ -64,17 +64,38 @@ class checkOutTVC: UITableViewController {
     
     @IBAction func confirmOrderButtonTApped(_ sender: Any) {
         
-        for product in cartProducts {
-            if product.stock == 0 {
-                service.reduceProductStock(productId: product.id, quantityToReduce: product.quantity)
+        // Trimmed input values
+            let name = txtName.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let phone = txtNumber.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let address = txtAddress.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+            // Validation
+            if name.isEmpty || phone.isEmpty || address.isEmpty {
+                showAlertMessage(tittle: "Missing Information", message: "Please fill all the fields before checking out.")
+                return
             }
+
+            // Phone validation: must be numeric and exactly 10 digits
+            let phoneRegex = "^[0-9]{10}$"
+            let phonePredicate = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
+
+            if !phonePredicate.evaluate(with: phone) {
+                showAlertMessage(tittle: "Invalid Phone Number", message: "Please enter a valid 10-digit phone number.")
+                return
+            }
+
+            // Proceed with checkout logic
+            for product in cartProducts {
+                if product.stock == 0 {
+                    service.reduceProductStock(productId: product.id, quantityToReduce: product.quantity)
+                }
             service.checkoutCart(for: authUserId) { success in
                 DispatchQueue.main.async {
                     if success {
                         // Step 1: Show alert
                         let alert = UIAlertController(
                             title: "Success",
-                            message: "Your order has been placed successfully!",
+                            message: "Your order has been placed successfully!. adn will be delivered at address: \(self.user.address) in 5 working days",
                             preferredStyle: .alert
                         )
                         

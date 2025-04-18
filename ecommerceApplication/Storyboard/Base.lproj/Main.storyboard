@@ -346,9 +346,6 @@
                                             <rect key="frame" x="177" y="17" width="127" height="35"/>
                                             <state key="normal" title="Button"/>
                                             <buttonConfiguration key="configuration" style="filled" title="Checkout"/>
-                                            <connections>
-                                                <segue destination="pel-fh-nlU" kind="show" id="sUs-LB-9HQ"/>
-                                            </connections>
                                         </button>
                                     </subviews>
                                     <constraints>
@@ -1170,7 +1167,7 @@
         <!--Checkout-->
         <scene sceneID="YJW-AG-Sfz">
             <objects>
-                <tableViewController id="pel-fh-nlU" customClass="checkOutTVC" customModule="ecommerceApplication" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="checkOutTVC" id="pel-fh-nlU" customClass="checkOutTVC" customModule="ecommerceApplication" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="static" style="grouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" estimatedSectionFooterHeight="-1" id="8Tu-zc-bKe">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
