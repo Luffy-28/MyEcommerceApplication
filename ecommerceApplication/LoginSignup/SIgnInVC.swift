@@ -17,6 +17,8 @@ class SIgnInVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        logInActivityIndicatorView.hidesWhenStopped = true
+        logInActivityIndicatorView.stopAnimating()
 
         // Do any additional setup after loading the view.
     }
@@ -28,6 +30,7 @@ class SIgnInVC: UIViewController {
         }
         logInActivityIndicatorView.startAnimating()
         Auth.auth().sendPasswordReset(withEmail: emailTextField.text!){ error in
+            self.logInActivityIndicatorView.stopAnimating()
             if let error = error {
                 self.showAlertMessage(tittle: "Error", message: "\(error)")
                 self.logInActivityIndicatorView.stopAnimating()
