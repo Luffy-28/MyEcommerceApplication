@@ -14,6 +14,8 @@ protocol ProductActionDelegate: AnyObject {
 
 class displayContactTVCell: UITableViewCell {
 
+    @IBOutlet weak var stockLabel: UILabel!
+    
     @IBOutlet weak var photoImageView: UIImageView!
     
     @IBOutlet weak var productName: UILabel!
@@ -33,6 +35,8 @@ class displayContactTVCell: UITableViewCell {
             delegate?.didTapAddToCart(product: product)
         }
     }
+    
+
     
     
 }

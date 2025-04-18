@@ -8,8 +8,12 @@
 import UIKit
 import FirebaseAuth
 
-class displayContactTVC: UITableViewController, ProductActionDelegate {
+class displayContactTVC: UITableViewController, ProductActionDelegate, UISearchBarDelegate {
     func didTapAddToCart(product: Product) {
+        if product.stock == 0 {
+            showToast("\(product.name) is out of stock")
+                return
+            }
         service.addToCart(for: userAuthId, withData: product, quantity: 1) { success in
             DispatchQueue.main.async {
                 if success {
@@ -32,15 +36,25 @@ class displayContactTVC: UITableViewController, ProductActionDelegate {
         }
     }
     
-
+    
+    
+    @IBOutlet weak var UisearchBar: UISearchBar!
+    
+    var searching = false
+    
+    
     @IBOutlet var displayContactTVC: UITableView!
     let service = Repository()
     var products = [Product]()
+    var filteredProducts = [Product]()
     let userAuthId = Auth.auth().currentUser!.uid
     var selectedProduct : Product!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 120
+        
 
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
@@ -64,18 +78,33 @@ class displayContactTVC: UITableViewController, ProductActionDelegate {
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return products.count
+        return searching ? filteredProducts.count : products.count
     }
 
   
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "reuseIdentifier", for: indexPath) as! displayContactTVCell
 
-        let product = products[indexPath.row]
+        let product = searching ? filteredProducts[indexPath.row] : products[indexPath.row]
+        
         cell.productName.text = product.name
+        cell.productName?.numberOfLines = 0
+        cell.productName?.lineBreakMode = .byWordWrapping
         cell.delegate = self
         cell.productPrice.text = "$\(product.price)"
         cell.product = product
+        
+        if product.stock == 0 {
+            cell.stockLabel.text = "Out of order"
+            cell.stockLabel.textColor = .red
+        } else if product.stock < 20 {
+            cell.stockLabel.text = "Low stock"
+            cell.stockLabel.textColor = .orange
+        } else {
+            cell.stockLabel.text = "In stock"
+            cell.stockLabel.textColor = .green
+        }
+        cell.layer.cornerRadius = 8.0
         
         // for the picture
         if !product.Image.isEmpty && UIImage(named: product.Image) != nil {
@@ -85,6 +114,7 @@ class displayContactTVC: UITableViewController, ProductActionDelegate {
             // place a default picture
             cell.photoImageView.image = UIImage(systemName: "person.circle.fill")
         }
+        
         cell.photoImageView.layer.cornerRadius = cell.photoImageView.frame.size.width / 2
         cell.photoImageView.clipsToBounds = true
 
@@ -97,7 +127,30 @@ class displayContactTVC: UITableViewController, ProductActionDelegate {
     }
     
 
- 
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        print("Search text: \(searchText)")
+        
+        let trimmedText = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if !trimmedText.isEmpty {
+            searching = true
+            filteredProducts = products.filter {
+                $0.name.lowercased().contains(trimmedText.lowercased())
+            }
+            print("Found \(filteredProducts.count) matches")
+        } else {
+            searching = false
+            filteredProducts.removeAll()
+        }
+        
+        print("Searching: \(searching)")
+        displayContactTVC.reloadData()
+    }
+
+    
+    
+    
+    
     // MARK: - Navigation
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         // Get the new view controller using segue.destination.

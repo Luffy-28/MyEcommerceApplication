@@ -6,9 +6,16 @@
 //
 
 import UIKit
+import FirebaseAuth
+import FirebaseFirestore
 
 class ReviewTVC: UITableViewController {
-
+    
+    @IBOutlet var ReviewTVC: UITableView!
+    let service = Repository()
+    var products : Product!
+    var users : User!
+    var reviews = [review]()
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -17,73 +24,94 @@ class ReviewTVC: UITableViewController {
 
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         // self.navigationItem.rightBarButtonItem = self.editButtonItem
+        let authUserId = Auth.auth().currentUser?.uid ?? ""
+        service.findUserInfo(for: authUserId) { returnUser in
+            self.users = returnUser
+            self.ReviewTVC.reloadData()
+        }
+        
+        
+        service.fetchReviews(for: products.id) { fetchReview in
+            self.reviews = fetchReview
+            self.ReviewTVC.reloadData()
+        }
+        
     }
 
     // MARK: - Table view data source
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
-        return 0
+        return 1
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return 0
+        return reviews.count + 1
     }
 
-    /*
+   
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "reuseIdentifier", for: indexPath)
+        if indexPath.row < reviews.count {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "reuseIdentifier", for: indexPath) as! ReviewTVCell
+            let reviewData = reviews[indexPath.row]
+            
+            cell.usernameLAbel.text = reviewData.name
+            cell.userReview.text = reviewData.comment
+            
+            cell.userReview.numberOfLines = 0
+            cell.userReview.lineBreakMode = .byWordWrapping
+            cell.userReview.adjustsFontForContentSizeCategory = true
 
-        // Configure the cell...
-
-        return cell
+            cell.reviewSlider.value = Float(reviewData.rating)
+            cell.reviewSlider.isUserInteractionEnabled = false
+            return cell
+        } else{
+            let cell = tableView.dequeueReusableCell(withIdentifier: "postTVCell", for: indexPath) as! ReviewTVCell
+            cell.giveReviewSlider.isUserInteractionEnabled = true
+            return cell
+        }
     }
-    */
-
-    /*
-    // Override to support conditional editing of the table view.
-    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the specified item to be editable.
-        return true
+    @IBAction func postsisTap(_ sender: Any) {
+        guard let button = sender as? UIButton else { return }
+        guard let cell = button.superview?.superview as? ReviewTVCell else { return }
+        guard let reviewTxt = cell.txtReview.text, !reviewTxt.isEmpty else {
+            print("Review text is empty")
+            return
+        }
+        let alreadyReviewed = reviews.contains { $0.userId == users.id }
+        if alreadyReviewed{
+            showAlertMessage(tittle:"Review Exist", message:"You’ve already submitted a review for this product." )
+            return
+        }
+        
+        let rating = Int(cell.giveReviewSlider.value)
+        
+        let newReview = review(id: UUID().uuidString,
+                               userId:users.id,
+                               name: users.name,
+                               rating: rating,
+                               comment: reviewTxt,
+                               timestamp: Timestamp(date: Date())
+)
+        service.addReview(for: products.id, review: newReview) { success in
+            if success {
+                self.reviews.insert(newReview, at: 0)
+                cell.txtReview.text = ""
+                cell.giveReviewSlider.value = 0.0
+                self.ReviewTVC.reloadData()
+            }
+        }
+        
     }
-    */
+    
 
-    /*
-    // Override to support editing the table view.
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            // Delete the row from the data source
-            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
+    @IBAction func caceldidTAp(_ sender: Any) {
+        guard let button = sender as? UIButton else { return }
+        guard let cell = button.superview?.superview as? ReviewTVCell else { return }
+        cell.txtReview.text = ""
+        cell.giveReviewSlider.value = 0.0
     }
-    */
-
-    /*
-    // Override to support rearranging the table view.
-    override func tableView(_ tableView: UITableView, moveRowAt fromIndexPath: IndexPath, to: IndexPath) {
-
-    }
-    */
-
-    /*
-    // Override to support conditional rearranging of the table view.
-    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the item to be re-orderable.
-        return true
-    }
-    */
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
-    }
-    */
+    
 
 }

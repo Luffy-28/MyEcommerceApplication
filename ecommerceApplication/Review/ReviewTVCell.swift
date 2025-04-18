@@ -8,16 +8,18 @@
 import UIKit
 
 class ReviewTVCell: UITableViewCell {
-
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        // Initialization code
-    }
-
-    override func setSelected(_ selected: Bool, animated: Bool) {
-        super.setSelected(selected, animated: animated)
-
-        // Configure the view for the selected state
-    }
-
+    @IBOutlet weak var usernameLAbel: UILabel!
+    
+    @IBOutlet weak var reviewSlider: UISlider!
+    
+    @IBOutlet weak var userReview: UILabel!
+    @IBOutlet weak var cancelButton: UIButton!
+    
+    @IBOutlet weak var txtReview: UITextField!
+    
+    @IBOutlet weak var giveReviewSlider: UISlider!
+    
+    @IBOutlet weak var postReview: UIButton!
+    
+    
 }

@@ -7,9 +7,11 @@
 
 import UIKit
 import FirebaseAuth
+import PDFKit
+import MessageUI
 
-class checkOutTVC: UITableViewController {
-
+class checkOutTVC: UITableViewController, MFMailComposeViewControllerDelegate {
+    
     @IBOutlet var checkoutTVC: UITableView!
     
     @IBOutlet weak var emaiLabel: UILabel!
@@ -22,22 +24,22 @@ class checkOutTVC: UITableViewController {
     
     @IBOutlet weak var confirmButton: UIButton!
     let service = Repository()
-       let authUserId = Auth.auth().currentUser?.uid ?? ""
-       var cartProducts = [Product]()
-       var user : User!
+    let authUserId = Auth.auth().currentUser?.uid ?? ""
+    var cartProducts = [Product]()
+    var user : User!
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
-
+        
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         // self.navigationItem.rightBarButtonItem = self.editButtonItem
         // Load user profile details
         print("Auth User ID: \(authUserId)")
-
+        
         service.findUserInfo(for: authUserId) { user in
             if let user = user {
                 self.user = user
@@ -51,7 +53,7 @@ class checkOutTVC: UITableViewController {
                 print("No user found for ID: \(self.authUserId)")
             }
         }
-
+        
         service.fetchCart(for: authUserId) { products in
             self.cartProducts = products
             print("Fetched \(products.count) cart items")
@@ -59,38 +61,49 @@ class checkOutTVC: UITableViewController {
                 print("\(p.name) - \(p.quantity)")
             }
         }
-
-            }
-
+        
+    }
+    
     @IBAction func confirmOrderButtonTApped(_ sender: Any) {
         
         for product in cartProducts {
-            service.reduceProductStock(productId: product.id, quantityToReduce: product.quantity)
+            if product.stock == 0 {
+                service.reduceProductStock(productId: product.id, quantityToReduce: product.quantity)
+            }
+            service.checkoutCart(for: authUserId) { success in
+                DispatchQueue.main.async {
+                    if success {
+                        // Step 1: Show alert
+                        let alert = UIAlertController(
+                            title: "Success",
+                            message: "Your order has been placed successfully!",
+                            preferredStyle: .alert
+                        )
+                        
+                        // Step 2: Redirect to HomeVC when OK is tapped
+                        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                            let homeVC = self.storyboard?.instantiateViewController(withIdentifier: "HomeVC") as! UITabBarController
+                            self.view.window?.rootViewController = homeVC
+                            self.view.window?.makeKeyAndVisible()
+                        }))
+                        
+                        self.present(alert, animated: true)
+                    } else {
+                        self.showAlertMessage(tittle: "Error", message: "Something went wrong. Please try again.")
+                    }
+                }
+            }
+            
+            /*
+             // MARK: - Navigation
+             
+             // In a storyboard-based application, you will often want to do a little preparation before navigation
+             override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+             // Get the new view controller using segue.destination.
+             // Pass the selected object to the new view controller.
+             }
+             */
+            
         }
-        
-        // Optional: Clear the user's cart after order
-        service.clearCart(for: authUserId)
-        
-        // Show confirmation alert
-        let alert = UIAlertController(
-            title: "Order Confirmed",
-            message: "Your order has been placed and will be delivered at:\n\(txtAddress.text ?? "")",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
-            self.navigationController?.popToRootViewController(animated: true)
-        }))
-        present(alert, animated: true)
     }
-    
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }

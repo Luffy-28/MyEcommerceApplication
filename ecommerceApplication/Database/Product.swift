@@ -16,9 +16,9 @@ class Product{
     var Image: String
     var stock: Int
     var registerAt: Timestamp!
-    var quantity: Int = 1
+    var quantity: Int
     
-    init(name: String, catgory: String, price: String, description: String, Image: String, stock: Int, registerAt: Timestamp, quantity: Int = 1) {
+    init(name: String, catgory: String, price: String, description: String, Image: String, stock: Int, registerAt: Timestamp, quantity: Int ) {
         self.name = name
         self.catgory = catgory
         self.price = price
@@ -52,7 +52,7 @@ class Product{
                   Image: String(),
                   stock: 0,
                   registerAt: Timestamp(date: Date()),
-                  quantity: 1)
+                  quantity: 0)
         self.id = id
     }
     
@@ -66,7 +66,7 @@ class Product{
                   Image: dictionary["Image"] as? String ?? "",
                   stock: dictionary["stock"] as? Int ?? 0,
                   registerAt: dictionary["registerAt"] as? Timestamp ?? Timestamp(date: Date()),
-                  quantity: dictionary["quantity"] as? Int ?? 1)
+                  quantity: dictionary["quantity"] as? Int ?? 0)
     }
     
     func toString() -> String {

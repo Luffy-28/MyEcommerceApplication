@@ -82,7 +82,7 @@ class Repository {
     
     func fetchAllProducts(fromCollection name: String, completion: @escaping ([Product]) -> ()) {
         var products = [Product]()
-        _ = db.collection(name).addSnapshotListener { snapshot, error in
+        _ = db.collection(name).order(by: "name").order(by: "price", descending: false).addSnapshotListener { snapshot, error in
             if let documents = snapshot?.documents {
                 products = documents.compactMap({ doc -> Product? in
                     let data = doc.data()
@@ -243,31 +243,61 @@ class Repository {
             }
         }
     }
-    func clearCart(for userId: String) {
-        let cartRef = db.collection("User").document(userId).collection("cart")
-        cartRef.getDocuments { snapshot, error in
-            if let error = error {
-                print("Failed to fetch cart: \(error.localizedDescription)")
-                return
-            }
+    func checkoutCart(for userId: String, completion: @escaping (Bool) -> Void) {
+            let userRef = db.collection("User").document(userId)
+            let cartRef = userRef.collection("cart")
 
-            guard let documents = snapshot?.documents else {
-                print("No cart documents found")
-                return
-            }
+            cartRef.getDocuments { snapshot, error in
+                guard let documents = snapshot?.documents, !documents.isEmpty else {
+                    completion(false)
+                    return
+                }
 
-            for doc in documents {
-                cartRef.document(doc.documentID).delete { error in
-                    if let error = error {
-                        print("Failed to delete cart item: \(error.localizedDescription)")
-                    } else {
-                        print("Deleted cart item: \(doc.documentID)")
+                var orderedItems: [[String: Any]] = []
+                var totalAmount: Double = 0.0
+
+                for doc in documents {
+                    let data = doc.data()
+
+                    if let name = data["name"] as? String,
+                       let priceStr = data["price"] as? String,
+                       let price = Double(priceStr),
+                       let quantity = data["quantity"] as? Int {
+
+                        orderedItems.append([
+                            "name": name,
+                            "price": price,
+                            "quantity": quantity
+                        ])
+
+                        totalAmount += price * Double(quantity)
+                    }
+                }
+
+                let orderData: [String: Any] = [
+                    "userId": userId,
+                    "items": orderedItems,
+                    "orderDate": Timestamp(date: Date()),
+                    "totalAmount": totalAmount
+                ]
+
+                userRef.collection("orders").addDocument(data: orderData) { error in
+                    if error != nil {
+                        completion(false)
+                        return
+                    }
+
+                    let batch = self.db.batch()
+                    for doc in documents {
+                        batch.deleteDocument(cartRef.document(doc.documentID))
+                    }
+
+                    batch.commit { error in
+                        completion(error == nil)
                     }
                 }
             }
         }
-    }
-
 
     func reduceProductStock(productId: String, quantityToReduce: Int) {
         let productRef = db.collection("Product").document(productId)
@@ -285,7 +315,13 @@ class Repository {
             }
         }
     }
+    func updateCartQuantity(for userId: String, productId: String, newQuantity: Int, completion: @escaping (Bool) -> Void) {
+        let productRef = db.collection("User").document(userId).collection("cart").document(productId)
 
+        productRef.updateData(["quantity": newQuantity]) { error in
+            completion(error == nil)
+        }
+    }
 
     
     func deleteFromCart(for userId: String, withProductId productId: String, completion: @escaping (Bool) -> Void) {
@@ -389,7 +425,39 @@ class Repository {
                     }
                 }
         }
+    func fetchOrderHistory(for userId: String, completion: @escaping ([Order]) -> Void) {
+        db.collection("User")
+            .document(userId)
+            .collection("orders")
+            .order(by: "orderDate", descending: true)
+            .getDocuments { snapshot, error in
+                var orders: [Order] = []
+                if let documents = snapshot?.documents {
+                    for doc in documents {
+                        if let order = Order(id: doc.documentID, dictionary: doc.data()) {
+                            orders.append(order)
+                        }
+                    }
+                }
+                completion(orders)
+            }
+    }
     
+    func updateOrderStatusIfNeeded(order: Order, userId: String) {
+        let currentDate = Date()
+        let deliveryDate = order.orderDate.dateValue().addingTimeInterval(5 * 24 * 60 * 60)
+
+        if currentDate >= deliveryDate {
+            let orderRef = db.collection("User")
+                             .document(userId)
+                             .collection("orders")
+                             .document(order.id)
+
+            orderRef.updateData(["status": "Delivered"])
+        }
+    }
+
+
 }
 
              

@@ -56,9 +56,23 @@ class cartTVC: UITableViewController {
             cell.configure(with: product)
             
             cell.onQuantityChange = { [weak self] newQty in
-                self?.products[indexPath.row].quantity = newQty
-                self?.cartTVC.reloadSections(IndexSet(integer: 1), with: .none)
+                guard let self = self else { return }
+
+                // Update local data
+                self.products[indexPath.row].quantity = newQty
+
+                // Save updated quantity to Firestore
+                self.service.updateCartQuantity(for: self.authUserId, productId: product.id, newQuantity: newQty) { success in
+                    if success {
+                        print("Quantity updated for \(product.name): \(newQty)")
+                    } else {
+                        print("Failed to update quantity for \(product.name)")
+                    }
+                }
+
+                self.cartTVC.reloadSections(IndexSet(integer: 1), with: .none)
             }
+
             
             cell.onRequestDelete = { [weak self] in
                 guard let self = self else { return }
